@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 use App\Database\Models\SessionModel;
 use App\Database\Models\CouponModel;
 use App\Database\Models\DeviceModel;
+use App\Services\SessionService;
 use App\Helpers\Firewall;
 use App\Helpers\Time;
 use App\Validators\InputValidator;
@@ -46,37 +47,35 @@ class WebController extends AbstractWebController
                 ]
             ]
         ]);
-        $this->flashes->push("message", "Connecté au code d'accès {$validator->fails()}");
-        // foreach ($validator->values() as $field => $value) {
-        //     $this->inputs->remember($field, $value);
-        // }
-        return $this->back($request, $response);
-        // if ($validator->fails()) {
-        //     foreach ($validator->values() as $field => $value) {
-        //         $this->inputs->remember($field, $value);
-        //     }
-        //     foreach ($validator->errors() as $field => $message) {
-        //         $this->errors->push($field, $message);
-        //     }
-        //     return $response;
-        //     //return $this->back($request, $response);
-        // } 
-        // $code = $request->getParsedBody()["coupon_code"] ?? "";
-        // if(!($coupon = CouponModel::findByCode($code))) {
-        //     $this->errors->push("coupon_code", "Ce code d'accès est invalide.");
-        //     return $this->back($request, $response);
-        // }
-        // if(!($coupon->isDeviceTimeExceeded($device))) {
-        //     $this->errors->push("coupon_code", "Le temps accordé à votre appareil a écoulé.");
-        //     return $this->back($request, $response);
-        // }
-        // if(!($coupon->hasReachedDeviceLimit($device))) {
-        //     $this->errors->push("coupon_code", "Ce code d'accès est invalide.");
-        //     return $this->back($request, $response);
-        // }
-        // SessionService::connect($device, $coupon);
-        // $this->flashes->push("message", "Connecté au code d'accès $code");
-        // return $this->redirect($response, "/session");
+        if ($validator->fails()) {
+            foreach ($validator->values() as $field => $value) {
+                $this->inputs->remember($field, $value);
+            }
+            foreach ($validator->errors() as $field => $message) {
+                $this->errors->push($field, $message);
+            }
+            return $this->back($request, $response);
+        }
+        $code = $request->getParsedBody()["coupon_code"] ?? "";
+        $this->inputs->remember("coupon_code", $code);
+        if(!($coupon = CouponModel::findByCode($code))) {
+            $this->errors->push("coupon_code", "Ce code d'accès est invalide.");
+            return $this->back($request, $response);
+        }
+        if($coupon->isDeviceTimeExceeded($device)) {
+            $this->errors->push("coupon_code", "Le temps accordé par ce code à votre appareil a écoulé.");
+            return $this->back($request, $response);
+        }
+        if($coupon->hasReachedDeviceLimit($device)) {
+            $this->errors->push("coupon_code", "Trop d'appareils pour ce code sont connectés.");
+            return $this->back($request, $response);
+        }
+        if(!SessionService::connect($device, $coupon)) {
+            throw new HttpException($request, "La connexion a échoué: Le pare-feu n'est pas parvenu a authentifié l'appareil.", 503);
+        }
+        $this->inputs->forget("coupon_code");
+        $this->flashes->push("message", "Connecté au code d'accès $code");
+        return $this->redirect($response, "/session");
     }
 
     public function session(Request $request, Response $response, array $args): Response 
@@ -88,9 +87,10 @@ class WebController extends AbstractWebController
         if (!($coupon = CouponModel::findById($session->couponId))) {
             throw new HttpUnauthorizedException($request, "Le coupon utilisé est invalide.");
         }
-        $remainingDeviceTime = CouponService::getRemainingDeviceTime($coupon, $device);
-        if($remainingDeviceTime <= 0) {
-            SessionService::disconnect($session);
+        if(($remainingDeviceTime = CouponService::getRemainingDeviceTime($coupon, $device)) <= 0) {
+            if(!(SessionService::disconnect($session))) {
+                throw new HttpException($request, "La déconnexion a échoué: Le pare-feu n'est pas parvenu a déauthentifié l'appareil.", 503);
+            }
             $this->flashes->push("message", "Le temps accordé à votre appareil par le code d'accès {$coupon->code} a écoulé.");
             return $this->redirect($response, "/");
         }

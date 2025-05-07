@@ -9,17 +9,19 @@ use Slim\Exception\HttpException;
 
 class SessionService
 {
-    public static function connect(DeviceModel $device, CouponModel $coupon) {
+    public static function connect(DeviceModel $device, CouponModel $coupon): bool {
         if(!Firewall::authenticate($device)) {
-            throw new HttpException($request, "La connexion a échoué: Le pare-feu n'est pas parvenu a authentifié l'appareil.", 503);
+            return false;
         } 
         SessionModel::connect($device, $coupon);
+        return true;
     }
 
     public static function disconnect(SessionModel $session) {
         if(!Firewall::deauthenticate($device)) {
-            throw new HttpException($request, "La connexion a échoué: Le pare-feu n'est pas parvenu a authentifié l'appareil.", 503);
+            return false;
         } 
         $session->disconnect();
+        return true;
     }
 }
