@@ -32,16 +32,16 @@ class ErrorBag
 
     public function has(string $field): bool
     {
-        return !empty($this->current[$field] ?? []);
+        return !empty($this->current[$field]);
     }
 
     public function first(string $field, $default = null): mixed 
     {
-        return ($this->current[$field] ?? [])[0] ?? $default;
+        return $this->current[$field][0] ?? $default;
     }  
 
     public function all(string $field): mixed 
     {
-        return $this->current[$field] ?? [];
+        return $this->current[$field];
     }  
 }

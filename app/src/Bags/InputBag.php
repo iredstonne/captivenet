@@ -30,6 +30,11 @@ class InputBag
         $this->storage[$this->storageKey][$field] = $value;
     }
 
+    public function forget(string $field) 
+    {
+        unset($this->storage[$this->storageKey][$field]);
+    }
+
     public function old(string $field, mixed $default = null): ?string
     {
         return $this->current[$field] ?? $default;
