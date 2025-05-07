@@ -59,7 +59,7 @@ const createPlugin = (config: Required<PluginConfig>): Plugin => {
         enforce: "post",
         config(currentUserConfig, { command }): UserConfig {
             if(command === "serve") {
-                throw new VitePluginError("This plugin does support `vite dev`. Only `vite build` is allowed.")
+                throw new VitePluginError("This plugin doesn't support `vite dev`. Only `vite build` is allowed.")
             }
             return {
                 base: currentUserConfig.base ?? "/" + config.buildDirectoryName + "/",

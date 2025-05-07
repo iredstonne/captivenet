@@ -43,9 +43,9 @@ MARIADB_APP_USER="app"
 MARIADB_APP_DATABASE="app_database"
 
 #-------------------------------
-# Which path should the passwords database be stored in ?
+# Which path should the password vault be stored in ?
 #-------------------------------
-PASSWORDS_DATABASE_PATH="/root"
+PASSWORD_VAULT_PATH="/root"
 
 #-------------------------------
 #|          Functions          |
@@ -92,7 +92,7 @@ echo_frame() {
     printf "${FG_GRAY}╰%s╯${RESET}\n" "$(printf "%${MAX_LINE_WIDTH}s" | tr ' ' "-")"
 }
 
-PASSWORDS_VAULT_FILE=$(realpath "$PASSWORDS_DATABASE_PATH/passwords.db")
+PASSWORD_VAULT_FILE=$(realpath "$PASSWORD_VAULT_PATH/password_vault.db")
 
 init_password_vault() { 
     printf "${FG_PURPLE}Setting up passwords table...${RESET}\n" 
