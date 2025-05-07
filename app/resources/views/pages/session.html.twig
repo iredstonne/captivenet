@@ -1,0 +1,78 @@
+{% extends "layouts/page.html.twig" %}
+
+{% block content %}
+    <div class="flex flex-col w-full items-center space-y-4">
+        {% if flash_has('message') %}
+            <div class="w-full p-4 text-sm rounded-xl text-center">
+                {{ flash('message') }}
+            </div>
+        {% endif %}
+        <div class="space-y-4">
+            <h1 class="text-center text-lg font-bold">Vous êtes connecté à Internet</h1>
+            <div class="w-full bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-4">
+                <div>
+                    <span class="block font-medium text-gray-500">Code d'accès</span>
+                    <span class="block text-gray-900 text-base font-mono">{{ coupon_code }}</span>
+                </div>
+                <div>
+                    <span class="block font-medium text-gray-500">Votre temps autorisé</span>
+                    <span class="text-xs text-gray-500 mt-1 block">{{ allowed_time|default("∞") }}</span>
+                </div>
+                <div>
+                    <span class="block font-medium text-gray-500">Votre temps restants</span>
+                    <span class="text-xs text-gray-500 mt-1 block">{{ remaining_time|default("?") }}</span>
+                </div>
+                <div>
+                    <span class="block font-medium text-gray-500">Appareils autorisés</span>
+                    <span class="text-xs text-gray-500 mt-1 block">{{ allowed_devices|default("∞") }}</span>
+                </div>
+                <div>
+                    <span class="block font-medium text-gray-500">Appareils restants</span>
+                    <span class="text-xs text-gray-500 mt-1 block">{{ remaining_devices|default("?") }}</span>
+                </div>
+            </div>
+            <div class="w-full bg-white border border-gray-200 rounded-xl p-4 space-y-3">
+                <h2 class="text-sm font-semibold text-gray-700 tracking-wide">
+                    {{ connected_devices_count }} appareils connectés
+                </h2>
+                <div class="flex flex-col gap-3 text-sm text-gray-800 max-h-64 overflow-y-auto">
+                    {% for connected_device in connected_devices %}
+                        <div class="flex flex-row items-center justify-between border border-gray-100 rounded-lg px-3 py-2 bg-gray-50 hover:bg-gray-100 transition">
+                            <div class="flex items-center space-x-3">
+                                <div class="flex flex-col">
+                                    <span class="font-mono text-sm text-gray-900">{{ connected_device.macAddress }}</span>
+                                    <span class="text-xs text-gray-500">{{ connected_device.ipAddress }}</span>
+                                    <span class="text-xs text-gray-500">{{ connected_device.kind|capitalize }}</span>
+                                </div>
+                            </div>
+                            {% if connected_device.macAddress == device_mac_address and connected_device.ipAddress == device_ip_address %}
+                                <div class="text-xs font-semibold bg-green-100 px-2 py-0.5 rounded-full">
+                                    Vous
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <p class="text-gray-500 text-xs text-center">
+                Les appareils connectés à ce réseau ne peuvent pas communiquer entre eux pour des raisons de sécurité.
+            </p>
+        </div>
+        <form method="POST" action="/session" class="flex">
+            <input 
+                type="hidden" 
+                name="_METHOD" 
+                value="DELETE"
+            >
+            <input
+                type="hidden"
+                name="_csrf_token"
+                value="{{ csrf_token() }}"
+            >
+            <button
+                type="submit"
+                class="inline-block space-y-2 px-4 py-2 bg-red-500 text-white font-semibold rounded-full transition-colors hover:bg-red-700"
+            >Déconnexion</button>
+        </form>
+    </div>
+{% endblock %}

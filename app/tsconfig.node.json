@@ -1,0 +1,26 @@
+{
+    "compilerOptions": {
+        "target": "esnext",
+        "module": "nodenext",
+        "moduleResolution": "nodenext",
+        "moduleDetection": "force",
+        "esModuleInterop": true,
+        "lib": ["esnext"],
+        "skipDefaultLibCheck": true,
+        "allowSyntheticDefaultImports": true,
+        "allowImportingTsExtensions": true,
+        "isolatedModules": true,
+        "strict": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "noEmit": true,
+        "noEmitOnError": true,
+        "useDefineForClassFields": true,
+        "noFallthroughCasesInSwitch": true,
+        "forceConsistentCasingInFileNames": true
+    },
+    "include": [
+        "./vite.config.ts",
+        "vite-plugin.ts"
+    ]
+}

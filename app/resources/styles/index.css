@@ -1,0 +1,4 @@
+@import "tailwindcss";
+@source "./resources/styles/**/*.css";
+@source "./resources/scripts/**/*.ts";
+@source "./resources/views/**/*.{html.twig}";

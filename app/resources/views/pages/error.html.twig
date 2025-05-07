@@ -1,0 +1,33 @@
+{% extends "layouts/page.html.twig" %}
+
+{% set imageURL = 'ice_cream' %}
+{% set title = 'Une erreur est survenue' %}
+{% set message = 'Nous travaillons à résoudre le problème. Veuillez réessayer plus tard.' %}
+
+{% if is_client %}
+    {% if code == 401 %}
+        {% set imageURL = 'lock' %}
+        {% set title = 'Non autorisé' %}
+        {% set message = "Vous devez être connecté pour accéder à cette page." %}
+    {% elseif code == 404 %}
+        {% set title = 'Page introuvable' %}
+        {% set message = "La page que vous recherchez n'existe pas ou a été déplacée." %}
+    {% else %}
+        {% set message = "Nous n'avons pas pu traiter votre demande. Veuillez vérifier vos informations et réessayer." %}
+    {% endif %}
+{% endif %}
+
+{% block content %}
+    <div class="flex flex-col w-full items-center space-y-4">
+        <div class="mx-auto mt-4 mb-6 w-48 h-48 bg-center bg-contain bg-no-repeat" style="background-image: url('./images/{{imageURL}}.png');"></div>
+        <h1 class="mb-2 text-center text-2xl font-bold text-gray-800">{{title}}</h1>
+        <p class="mb-6 text-center text-gray-600">{{message}}</p>
+        <a onclick="if (window.history.length > 1) { window.history.back(); } else { window.location.href = '/' }" class="inline-block w-full text-center px-4 py-2 bg-indigo-500 text-white font-semibold rounded-full cursor-pointer transition-colors hover:bg-indigo-700">Retour</a>
+        <div class="w-full leading-relaxed">
+            <div class="w-full mt-4 rounded-lg bg-gray-100 p-4 text-gray-700">
+                <p><strong>Code :</strong> {{code}}</p>
+                <p><strong>Raison :</strong> {{cause}}</p>
+            </div>
+        </div>
+    </div>
+{% endblock %}

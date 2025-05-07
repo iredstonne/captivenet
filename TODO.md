@@ -1,0 +1,3 @@
+- Fix PHP session accumulation that slow down nginx and FPM and make app fail (critical, must fix)
+- Organize the project
+- Fix small bugs and inconsistencies in portal
