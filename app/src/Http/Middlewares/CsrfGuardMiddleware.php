@@ -28,7 +28,7 @@ class CsrfGuardMiddleware implements MiddlewareInterface
     public function getCsrfToken()
     {
         $token = $this->storage[$this->storageKey] ?? null;
-        if(!is_string($token)) {
+        if(!isset($token) || is_string($token)) {
             return $this->generateCsrfToken();
         }
         return htmlspecialchars($token);

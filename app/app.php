@@ -39,7 +39,7 @@ $inputs = new InputBag();
 $errors = new ErrorBag();
 $flashes = new FlashBag();
 
-//$csrf = new CsrfGuardMiddleware();
+$csrf = new CsrfGuardMiddleware();
 
 $twig->getEnvironment()->addFunction(new \Twig\TwigFunction("vite_asset", function (string $path) {
     return vite_asset($path);
@@ -59,8 +59,8 @@ $twig->getEnvironment()->addFunction(new \Twig\TwigFunction("flash", function (s
 $twig->getEnvironment()->addFunction(new \Twig\TwigFunction("flash_has", function (string $key) use ($flashes) {
     return $flashes->has($key);
 }));
-$twig->getEnvironment()->addFunction(new \Twig\TwigFunction("csrf_token", function () {
-    return "0"; // $csrf->getCsrfToken();
+$twig->getEnvironment()->addFunction(new \Twig\TwigFunction("csrf_token", function () use ($csrf) {
+    return $csrf->getCsrfToken();
 }));
 
 $container->set(App::class, $app);
@@ -71,8 +71,8 @@ $container->set(Flashes::class, $flashes);
 
 $app->add(BodyParsingMiddleware::class);
 $app->add(MethodOverrideMiddleware::class);
-//$app->add($csrf);
 $app->add(TwigMiddleware::create($app, $twig));
+$app->add($csrf);
 $app->add(LocalDeviceDiscoverMiddleware::class);
 
 if(PRODUCTION) {
