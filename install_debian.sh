@@ -14,9 +14,9 @@ HOSTNAME="captivenet"
 HOST_ADDRESS="192.168.4.1"
 
 #-------------------------------
-# The maximum number of clients that can be addressed in the subnet (e.g., /24 = 254)
+# The maximum number of clients that can be addressed in the subnet (e.g., /24 = 244)
 #-------------------------------
-MAX_HOSTS=100
+MAX_HOSTS=244
 
 #-------------------------------
 # The SSID name broadcasted by the Wi-Fi access point.
@@ -97,9 +97,9 @@ PASSWORD_VAULT_FILE=$(realpath "$PASSWORD_VAULT_PATH/password_vault.db")
 init_password_vault() { 
     printf "${FG_PURPLE}Setting up passwords table...${RESET}\n" 
     local TABLE_NAME=
-    TABLE_NAME=$(sudo sqlite3 "$PASSWORDS_VAULT_FILE" "SELECT name FROM sqlite_master WHERE type='table' AND name='passwords';" 2>/dev/null)
+    TABLE_NAME=$(sudo sqlite3 "$PASSWORD_VAULT_FILE" "SELECT name FROM sqlite_master WHERE type='table' AND name='passwords';" 2>/dev/null)
     if [[ "$TABLE_NAME" != "passwords" ]]; then
-        sudo sqlite3 "$PASSWORDS_VAULT_FILE" <<EOF
+        sudo sqlite3 "$PASSWORD_VAULT_FILE" <<EOF
 CREATE TABLE IF NOT EXISTS passwords (
     key TEXT PRIMARY KEY,
     password TEXT NOT NULL
@@ -119,12 +119,12 @@ get_or_add_password_in_password_vault() {
     local ESCAPED_PASSWORD_KEY
     ESCAPED_PASSWORD_KEY="${PASSWORD_KEY//\'/\'\'}"
     local PASSWORD_VALUE
-    PASSWORD_VALUE=$(sudo sqlite3 -batch -noheader "$PASSWORDS_VAULT_FILE" "SELECT password FROM passwords WHERE key = '$ESCAPED_PASSWORD_KEY'")
+    PASSWORD_VALUE=$(sudo sqlite3 -batch -noheader "$PASSWORD_VAULT_FILE" "SELECT password FROM passwords WHERE key = '$ESCAPED_PASSWORD_KEY'")
     if [[ -z "$PASSWORD_VALUE" ]]; then
         PASSWORD_VALUE=$(openssl rand -base64 20 | tr -dc 'A-Za-z0-9' | head -c20)
         local ESCAPED_PASSWORD_VALUE
         ESCAPED_PASSWORD_VALUE="${PASSWORD_VALUE//\'/\'\'}"
-        sudo sqlite3 "$PASSWORDS_VAULT_FILE" "INSERT INTO passwords (key, password) VALUES ('$ESCAPED_PASSWORD_KEY', '$ESCAPED_PASSWORD_VALUE');"
+        sudo sqlite3 "$PASSWORD_VAULT_FILE" "INSERT INTO passwords (key, password) VALUES ('$ESCAPED_PASSWORD_KEY', '$ESCAPED_PASSWORD_VALUE');"
     fi
     echo "$PASSWORD_VALUE"
 }
@@ -234,7 +234,7 @@ sudo apt install --no-upgrade -y \
     nodejs
 
 # Networking
-echo_frame "${FG_CYAN}${UNDERLINE}Networking${RESET}"
+echo_frame "${FG_CYAN}${UNDERLINE}Networking - DHCP, DNS & Firewall${RESET}"
 printf "${FG_PURPLE}Configuring system-wide network stack${RESET}\n"
 sudo tee "/etc/sysctl.d/sysctl-overrides.conf" >/dev/null <<EOF
 # Disable IPv6 by default and on all interfaces system-wide
@@ -317,15 +317,16 @@ if ! ip addr show wlan0 | grep -q "$HOST_ADDRESS"; then
 fi
 ip link show wlan0
 ip addr show wlan0
-printf "${FG_PURPLE}Configuring Dnsmasq (DHCP & DNS)...${RESET}\n"
+printf "${FG_PURPLE}Configuring DHCP and DNS...${RESET}\n"
 HOST_SUBNET="${HOST_ADDRESS%.*}"
-DHCP_RANGE_START_IP=10
-DHCP_USUABLE_HOSTS=$((USABLE_HOSTS - (DHCP_RANGE_START_IP - 1)))
-if (( DHCP_USUABLE_HOSTS < MAX_HOSTS )); then
-    printf "${FG_RED}${BOLD}Not enough usuable hosts for DHCP (${DHCP_USUABLE_HOSTS} available, ${MAX_HOSTS} requested). Terminating...\n"
+DHCP_RANGE_START_OCTET=10
+DHCP_RANGE_USABLE_HOSTS=$((USABLE_HOSTS - (DHCP_RANGE_START_OCTET - 1)))
+DHCP_RANGE_END_OCTET=$((DHCP_RANGE_START_OCTET + MAX_HOSTS - 1))
+if (( DHCP_RANGE_START_OCTET < 0 || DHCP_RANGE_END_OCTET > 255 )); then
+    printf "${FG_RED}${BOLD}Invalid DHCP range for $HOST_SUBNET.0. Aborting...${RESET}\n"
+    exit 1
 fi
-DHCP_RANGE_END_IP=$((DHCP_RANGE_START_IP + MAX_HOSTS - 1))
-DHCP_RANGE_LINE="dhcp-range=${HOST_SUBNET}.${DHCP_RANGE_START_IP},${HOST_SUBNET}.${DHCP_RANGE_END_IP},24h"
+DHCP_RANGE_LINE="dhcp-range=${HOST_SUBNET}.${DHCP_RANGE_START_OCTET},${HOST_SUBNET}.${DHCP_RANGE_END_OCTET},24h"
 sed -i 's/^dhcp-range=.*/'"$DHCP_RANGE_LINE"'/' "$BASE_PATH/config/network/dnsmasq.conf"
 sudo ln -sf "$BASE_PATH/config/network/dnsmasq.conf" "/etc/dnsmasq.d/dnsmasq-overrides.conf"
 printf "${FG_PURPLE}Scheduling a wlan0 iface state change dispatcher script...${RESET}\n"
@@ -334,8 +335,9 @@ sudo tee /etc/NetworkManager/dispatcher.d/99-wlan0-up-dispatch >/dev/null <<EOF
 IFACE="\$1"
 STATE="\$2"
 if [ "\$IFACE" = "wlan0" ] && [ "\$STATE" = "up" ]; then
+    logger -t "dispatcher" "wlan0 is up"
     DAEMON_PROCESS_NAME="dnsmasq"
-    logger -t "dispatcher" "wlan0 is up — restarting \$DAEMON_PROCESS_NAME"
+    logger -t "dispatcher" "Restarting \$DAEMON_PROCESS_NAME"
     sudo systemctl restart \$DAEMON_PROCESS_NAME
     for _ in {1..10}; do
         if systemctl is-active --quiet \$DAEMON_PROCESS_NAME; then
@@ -349,7 +351,7 @@ if [ "\$IFACE" = "wlan0" ] && [ "\$STATE" = "up" ]; then
         logger -t "dispatcher" "\$DAEMON_PROCESS_NAME failed to activate. Aborting..."
         exit 1
     fi
-    logger -t "dispatcher" "Applying iptables rules (firewall)..."
+    logger -t "dispatcher" "Applying iptables rules..."
     sudo chmod +x "$BASE_PATH/config/network/firewall.sh"
     sudo bash "$BASE_PATH/config/network/firewall.sh"
 fi
@@ -473,13 +475,9 @@ sudo rm -rf /var/lib/php/sessions/*
 sudo mkdir -p /var/lib/php/sessions
 sudo chown www-data:www-data /var/lib/php/sessions
 sudo chmod 775 /var/lib/php/sessions
-printf "${FG_PURPLE}Installing PHP 8.4 dependencies with Composer...${RESET}\n"
-sudo php -r "copy('https://getcomposer.org/installer', 'php://stdout');" | sudo php -- --install-dir=/usr/local/bin --filename=composer >/dev/null 2>&1
-sudo COMPOSER_ALLOW_SUPERUSER=1 composer install -d "$BASE_PATH/app" --no-interaction >/dev/null 2>&1
-sudo COMPOSER_ALLOW_SUPERUSER=1 composer dump-autoload -d "$BASE_PATH/app" --no-interaction  >/dev/null 2>&1
 printf "${FG_PURPLE}Restarting PHP 8.4...${RESET}\n"
 sudo systemctl restart php8.4-fpm
-printf "${FG_PURPLE}Installing Adminer...${RESET}\n"
+printf "${FG_PURPLE}Installing and publishing latest Adminer files to www...${RESET}\n"
 sudo wget -qO "$SITE_WWW_DIR_PATH/adminer/index.php" https://www.adminer.org/latest.php
 printf "${FG_PURPLE}Publishing app files to www...${RESET}\n"
 sudo cp "$BASE_PATH/app/.env.local" "$BASE_PATH/app/.env"
@@ -487,9 +485,13 @@ sudo sed -i "s/^DATABASE_NAME=$/DATABASE_NAME=$MARIADB_APP_DATABASE/" "$BASE_PAT
 sudo sed -i "s/^DATABASE_USERNAME=$/DATABASE_USERNAME=$MARIADB_APP_USER/" "$BASE_PATH/app/.env"
 sudo sed -i "s/^DATABASE_PASSWORD=$/DATABASE_PASSWORD=$MARIADB_APP_PASSWORD/" "$BASE_PATH/app/.env"
 sudo cp -r "$BASE_PATH/app" "$SITE_WWW_DIR_PATH"
+printf "${FG_PURPLE}Installing PHP 8.4 app dependencies with Composer...${RESET}\n"
+sudo php -r "copy('https://getcomposer.org/installer', 'php://stdout');" | sudo php -- --install-dir=/usr/local/bin --filename=composer >/dev/null 2>&1
+sudo COMPOSER_ALLOW_SUPERUSER=1 composer install -d "$BASE_PATH/app" --no-interaction >/dev/null 2>&1
+sudo COMPOSER_ALLOW_SUPERUSER=1 composer dump-autoload -d "$BASE_PATH/app" --no-interaction  >/dev/null 2>&1
 printf "${FG_PURPLE}Running app seeders...${RESET}\n"
 sudo php "$BASE_PATH/app/bin/seed.php"
-printf "${FG_PURPLE}Scheduling PHP 8.4 scripts...${RESET}\n"
+printf "${FG_PURPLE}Scheduling PHP 8.4 scripts with CRON...${RESET}\n"
 sudo chmod +x "$SITE_WWW_DIR_PATH/app/bin/scheduler.php"
 add_cron_job "* * * * * /usr/bin/php $SITE_WWW_DIR_PATH/app/bin/scheduler.php"
 
@@ -497,11 +499,12 @@ add_cron_job "* * * * * /usr/bin/php $SITE_WWW_DIR_PATH/app/bin/scheduler.php"
 echo_frame "${FG_CYAN}${UNDERLINE}NodeJS${RESET}"
 cd "$BASE_PATH/app"
 printf "${FG_PURPLE}Installing NodeJS app dependencies...${RESET}\n"
+npm install -g npm@latest >/dev/null
 sudo npm install >/dev/null
-printf "${FG_GREEN}NodeJS dependencies dependencies installed${RESET}\n" 
+printf "${FG_GREEN}NodeJS app dependencies installed${RESET}\n" 
 printf "${FG_PURPLE}Building Vite dependencies assets...${RESET}\n"
 sudo npm run build >/dev/null
-printf "${FG_GREEN}Vite dependencies assets built${RESET}\n" 
+printf "${FG_GREEN}App assets built with Vite${RESET}\n" 
 cd "$BASE_PATH"
 
 printf "${FG_GREEN}Done${RESET}\n"
