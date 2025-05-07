@@ -15,20 +15,20 @@ class InputValidator
         $this->errors = [];
 
         foreach ($rules as $field => $constraints) {
-            $value = $data[$field] ?? "";
+            $value = $this->values[$field] ?? "";
             if (isset($constraints["required"]) && trim($value) === "") {
                 $this->errors[$field] = $constraints["required"]["message"] ?? "The {$field} field is required";
                 continue;
             }
             if (isset($constraints["pattern"]["match"]) && !preg_match($constraints["pattern"]["match"], $value)) {
-                $this->errors[$field] = $constraints["required"]["message"] ?? "The {$field} field format is invalid";
+                $this->errors[$field] = $constraints["pattern"]["message"] ?? "The {$field} field format is invalid";
                 continue;
             }
             if (isset($constraints["minLength"]["value"]) && mb_strlen($value) < $constraints["minLength"]["value"]) {
                 $this->errors[$field] = $constraints["minLength"]["message"] ?? "The {$field} field must be at least {$constraints["minLength"]["value"]} characters.";
                 continue;
             }
-            if (isset($constraints["maxLength"]["value"]) && mb_strlen($value) < $constraints["maxLength"]["value"]) {
+            if (isset($constraints["maxLength"]["value"]) && mb_strlen($value) > $constraints["maxLength"]["value"]) {
                 $this->errors[$field] = $constraints["maxLength"]["message"] ?? "The {$field} field must not exceed {$constraints["maxLength"]["value"]} characters.";
                 continue;
             }
