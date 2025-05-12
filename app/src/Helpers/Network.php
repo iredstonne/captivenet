@@ -31,14 +31,14 @@ class Network
     public static function getDeviceMacAddress(?string $deviceIpAddress): ?string 
     {
         $escapedDeviceIpAddress = escapeshellarg($deviceIpAddress);
-        exec("grep $deviceIpAddress /var/lib/misc/dnsmasq.leases | cut -d ' ' -f 2", $output, $exitCode);
-        return $exitCode === 0 && !empty($output[0]) ? trim($output[0]) : null;
+        exec("grep $escapedDeviceIpAddress /var/lib/misc/dnsmasq.leases | cut -d ' ' -f 2", $output, $exitCode); // 0 = Passed, 1 = Failed, 2 = Error
+        return $exitCode === 0 && !empty($output[0]) ? trim(strtolower($output[0])) : null;
     }
 
-    public static function isDeviceConnectedToNetwork(DeviceModel $device) 
+    public static function isDeviceConnectedToNetwork(DeviceModel $device): bool 
     {
-        $escapedDeviceMacAddress = escapeshellarg($device->mac_address);
-        exec("iw dev wlan0 station dump | grep -i -q $deviceMacAddress", $output, $exitCode);
-        return $exitCode === 0 && !empty($output[0]) ? trim($output[0]) : null;
+        $deviceMacAddress = strtolower($device->macAddress);
+        exec("sudo /sbin/iw dev wlan0 station dump | awk '/Station/ {print $2}' | grep -i -q ^$deviceMacAddress\$", $_, $exitCode); // 0 = Passed, 1 = Failed, 2 = Error
+        return $exitCode === 0;
     }
 }
