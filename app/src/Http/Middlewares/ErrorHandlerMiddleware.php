@@ -35,9 +35,18 @@ class ErrorHandlerMiddleware implements MiddlewareInterface
         });
     }
 
-    private function handleException(Throwable $throwable)
+    private function handleException(Request $request, \Throwable $throwable): Response
     {
+        $response = $this->app->getResponseFactory()->createResponse();
+        $isHttp = $throwable instanceof HTTPException;
+        $code =  $throwable->getCode() ?? 500;
+        $message = $throwable->getMessage();
 
+        return $this->twig->render($response, "pages/error.html.twig", [
+            "code" => $code,
+            "cause" => $isHttp ? $message : (!PRODUCTION ? $message : "Non spécifié."),
+            "is_client" => $isHttp && $code >= 400 && $code < 500,
+        ]);
     }
 
     public function process(Request $request, Handler $handler): Response
@@ -45,18 +54,7 @@ class ErrorHandlerMiddleware implements MiddlewareInterface
         try {
             return $handler->handle($request);
         } catch(\Throwable $throwable) {
-           // handleException($request, $response, $throwable);
-
-            $response = $this->app->getResponseFactory()->createResponse();
-            $isHttp = $throwable instanceof HTTPException;
-            $code =  $throwable->getCode() ?? 500;
-            $message = $throwable->getMessage();
-
-            return $this->twig->render($response, 'pages/error.html.twig', [
-                'code' => $code,
-                'cause' => $isHttp ? $message : (!PRODUCTION ? $message : "Non spécifié."),
-                'is_client' => $isHttp && $code >= 400 && $code < 500
-            ]);
+            return $this->handleException($request, $throwable);
         }
     }
 }
