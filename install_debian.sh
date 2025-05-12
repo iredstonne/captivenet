@@ -470,6 +470,11 @@ sudo ln -sf "$BASE_PATH/config/php/cli/php.ini" "/etc/php/8.4/cli/php.ini"
 sudo ln -sf "$BASE_PATH/config/php/fpm/php.ini" "/etc/php/8.4/fpm/php.ini"
 sudo ln -sf "$BASE_PATH/config/php/cli/php.ini" "/etc/php/8.4/cli/conf.d/php.ini"
 sudo ln -sf "$BASE_PATH/config/php/fpm/www.conf" "/etc/php/8.4/fpm/pool.d/www.conf"
+printf "${FG_PURPLE}Refining PHP 8.4 permissions...${RESET}\n"
+touch "/etc/sudoers.d/www-data"
+chmod 0440 "/etc/sudoers.d/www-data"
+echo "www-data ALL=(ALL) NOPASSWD: /sbin/iw" | sudo tee -a /etc/sudoers.d/www-data
+echo "www-data ALL=(ALL) NOPASSWD: /sbin/ipset" | sudo tee -a /etc/sudoers.d/www-data 
 printf "${FG_PURPLE}Clearing PHP 8.4 session cache...${RESET}\n"
 sudo rm -rf /var/lib/php/sessions/*
 sudo mkdir -p /var/lib/php/sessions
