@@ -6,6 +6,7 @@
 - Internet connection
 - Root or sudo access
 - Debian Bookworm 12 
+- Ethernet port connected to ISP (eth0)
 - Wi-Fi card with AP mode support
 
 # Setup
