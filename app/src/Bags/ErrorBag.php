@@ -17,7 +17,6 @@ class ErrorBag
             }
         }
         $this->storage = &$_SESSION;
-
         if(!isset($this->storage[$this->storageKey])) {
             $this->storage[$this->storageKey] = [];
         }

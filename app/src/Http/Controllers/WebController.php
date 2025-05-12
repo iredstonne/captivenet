@@ -5,6 +5,7 @@ use App\Database\Models\SessionModel;
 use App\Database\Models\CouponModel;
 use App\Database\Models\DeviceModel;
 use App\Services\SessionService;
+use App\Services\CouponService;
 use App\Helpers\Firewall;
 use App\Helpers\Time;
 use App\Validators\InputValidator;
@@ -88,20 +89,20 @@ class WebController extends AbstractWebController
             throw new HttpUnauthorizedException($request, "Le coupon utilisé est invalide.");
         }
         if(($remainingDeviceTime = CouponService::getRemainingDeviceTime($coupon, $device)) <= 0) {
-            if(!(SessionService::disconnect($session))) {
+            if(!(SessionService::disconnect($device, $session))) {
                 throw new HttpException($request, "La déconnexion a échoué: Le pare-feu n'est pas parvenu a déauthentifié l'appareil.", 503);
             }
-            $this->flashes->push("message", "Le temps accordé à votre appareil par le code d'accès {$coupon->code} a écoulé.");
+            $this->flashes->push("message", "Déconnecté du code d'accès {$coupon->code}. Le temps accordé à votre appareil a écoulé.");
             return $this->redirect($response, "/");
         }
         $remainingDevices = CouponService::getRemainingDevices($coupon);
-        $connectedDevices = $this->coupon->getConnectedDevices();
+        $connectedDevices = $coupon->getConnectedDevices();
         return $this->view($response, "pages/session.html.twig", [
             "coupon_code" => $coupon->code,
             "device_ip_address" => $device->ipAddress,
             "device_mac_address" => $device->macAddress,
-            "allowed_time" => Time::formatRemaining($coupon->allowed_time),
-            "allowed_devices" => $coupon->allowed_devices,
+            "allowed_time" => Time::formatRemaining($coupon->allowedTime),
+            "allowed_devices" => $coupon->allowedDevices,
             "remaining_device_time" => Time::formatRemaining($remainingDeviceTime),
             "remaining_devices" => $remainingDevices,
             "connected_devices" => $connectedDevices,
@@ -118,8 +119,8 @@ class WebController extends AbstractWebController
         if (!($coupon = CouponModel::findById($session->couponId))) {
             throw new HttpUnauthorizedException($request, "Le coupon utilisé est invalide ou a expiré.");
         }
-        SessionService::disconnect($session);
-        $this->flashes->push("success", "Déconnecté du code d'accès $couponCode.");
+        SessionService::disconnect($device, $session);
+        $this->flashes->push("success", "Déconnecté du code d'accès {$coupon->code}.");
         return $this->redirect($response, "/");
     }
 }

@@ -14,10 +14,10 @@ class InputBag
         if(session_status() != PHP_SESSION_ACTIVE) {
             if(!session_start()) {
                 throw new \RuntimeException("Failed to start session.");
+                exit;
             }
         }
         $this->storage = &$_SESSION;
-
         if(!isset($this->storage[$this->storageKey])) {
             $this->storage[$this->storageKey] = [];
         }

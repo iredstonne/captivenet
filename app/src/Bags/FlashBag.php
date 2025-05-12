@@ -18,7 +18,6 @@ class FlashBag
             }
         }
         $this->storage = &$_SESSION;
-        $this->storageKey = "_flashes";
         if(!isset($this->storage[$this->storageKey])) {
             $this->storage[$this->storageKey] = [];
         }

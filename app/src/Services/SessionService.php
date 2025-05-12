@@ -17,7 +17,7 @@ class SessionService
         return true;
     }
 
-    public static function disconnect(SessionModel $session) {
+    public static function disconnect(DeviceModel $device, SessionModel $session) {
         if(!Firewall::deauthenticate($device)) {
             return false;
         } 
