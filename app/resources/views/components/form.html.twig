@@ -1,0 +1,22 @@
+{% set method = method|upper|default("POST") %}
+{% set action = action|default("/") %}
+{% set csrf = csrf|default(csrf_token()) %}
+{% set is_spoofed = method != "GET" and method != "POST" %}
+
+<form method="POST" action="{{ action }}">
+    {% if is_spoofed %}
+        <input 
+            type="hidden" 
+            name="_METHOD" 
+            value="{{ method }}"
+        >
+    {% endif %}
+    <input 
+        type="hidden" 
+        name="_csrf_token" 
+        value="{{ csrf }}"
+    >
+    <div class="space-y-2">
+        {{ block("form_content") }}
+    </div>
+</form>

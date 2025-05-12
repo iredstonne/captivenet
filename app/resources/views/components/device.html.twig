@@ -1,0 +1,15 @@
+{% set device_ip_address = device.ipAddress %}
+{% set device_mac_address = device.macAddress %}
+{% set is_current_device = (device_ip_address == current_device_ip_address and current_device_mac_address == current_device_mac_address) %}
+
+<div class="flex flex-row items-center justify-between border border-gray-100 rounded-lg px-3 py-2 bg-gray-50 hover:bg-gray-100 transition">
+    <div class="flex items-center space-x-3">
+        <div class="flex flex-col">
+            <span class="font-mono text-sm text-gray-900">{{ device_ip_address }}</span>
+            <span class="text-xs text-gray-500">{{ device.kind|capitalize }}</span>
+        </div>
+    </div>
+    {% if is_current_device %}
+        <div class="text-xs font-semibold bg-purple-100 px-2 py-0.5 rounded-full">Vous</div>
+    {% endif %}
+</div>

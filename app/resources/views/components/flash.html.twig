@@ -1,0 +1,5 @@
+{% if flash_has("message") %}
+    <div class="w-full p-4 text-sm rounded-xl text-center">
+        {{ flash("message") }}
+    </div>
+{% endif %}

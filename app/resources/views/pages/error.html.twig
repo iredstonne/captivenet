@@ -3,18 +3,15 @@
 {% set imageURL = 'ice_cream' %}
 {% set title = 'Une erreur est survenue' %}
 {% set message = 'Nous travaillons à résoudre le problème. Veuillez réessayer plus tard.' %}
-
-{% if is_client %}
-    {% if code == 401 %}
-        {% set imageURL = 'lock' %}
-        {% set title = 'Non autorisé' %}
-        {% set message = "Vous devez être connecté pour accéder à cette page." %}
-    {% elseif code == 404 %}
-        {% set title = 'Page introuvable' %}
-        {% set message = "La page que vous recherchez n'existe pas ou a été déplacée." %}
-    {% else %}
-        {% set message = "Nous n'avons pas pu traiter votre demande. Veuillez vérifier vos informations et réessayer." %}
-    {% endif %}
+{% if code == 401 %}
+    {% set imageURL = 'lock' %}
+    {% set title = 'Non autorisé' %}
+    {% set message = "Vous devez être connecté pour accéder à cette page." %}
+{% elseif code == 404 %}
+    {% set title = 'Page introuvable' %}
+    {% set message = "La page que vous recherchez n'existe pas ou a été déplacée." %}
+{% elseif is_client %}
+    {% set message = "Nous n'avons pas pu traiter votre demande. Veuillez vérifier vos informations et réessayer." %}
 {% endif %}
 
 {% block content %}
