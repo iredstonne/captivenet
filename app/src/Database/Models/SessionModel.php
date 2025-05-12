@@ -43,10 +43,11 @@ class SessionModel
         }
     }
 
-    public static function all(): array
+    public static function findAllActive(): array
     {
         $pdo = Connection::getPDO();
-        $stmt = $pdo->query("SELECT * FROM sessions");
+        $stmt = $pdo->prepare("SELECT * FROM sessions WHERE ended_at IS NULL");
+        $stmt->execute();
         $snapshots = $stmt->fetchAll(\PDO::FETCH_OBJ);
         return array_map(fn($snapshot) => new self($snapshot), $snapshots);
     }
