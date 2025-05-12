@@ -25,12 +25,16 @@ class DeviceModel
     public static function discover(string $ipAddress, string $macAddress, DeviceKind $kind): DeviceModel 
     {
         $pdo = Connection::getPDO();
-        $stmt = $pdo->prepare("SELECT * FROM devices WHERE ip_address = ? AND mac_address = ? LIMIT 1");
-        $stmt->execute([$ipAddress, $macAddress]);
+        $stmt = $pdo->prepare("SELECT * FROM devices WHERE mac_address = ? LIMIT 1");
+        $stmt->execute([$macAddress]);
         $snapshot = $stmt->fetch(\PDO::FETCH_OBJ);
         if($snapshot) {
-            // Update ip associated to mac if dhcp release
-            return new self($snapshot);   
+            if($snapshot->ip_address != $ipAddress) {
+                $stmt = $pdo->prepare("UPDATE devices SET ip_address = ? WHERE id = ?");
+                $stmt->execute([$ipAddress, $snapshot->id]);
+                $snapshot->ip_address = $ipAddress;
+            }
+            return new self($snapshot); 
         }
         $stmt = $pdo->prepare("INSERT INTO devices (ip_address, mac_address, kind) VALUES (?, ?, ?)");
         $stmt->execute([$ipAddress, $macAddress, $kind->value]);
