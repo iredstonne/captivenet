@@ -1,9 +1,17 @@
-{% set method = method|upper|default("POST") %}
 {% set action = action|default("/") %}
-{% set csrf = csrf|default(csrf_token()) %}
-{% set is_spoofed = method != "GET" and method != "POST" %}
+{% set method = method|upper|default("POST") %}
+{% set is_spoofed = method != "POST" %}
+{% set csrf_token = csrf_token|default(csrf_token()) %}
+{% set is_csrf_protected = method == "POST" or is_spoofed %}
+{% set attributes = attributes|default({}) %}
 
-<form method="POST" action="{{ action }}">
+<form 
+    action="{{ action }}"
+    method="POST" 
+    {% for name, value in attributes %}
+        {{ name }}="{{ value }}"
+    {% endfor %}
+>
     {% if is_spoofed %}
         <input 
             type="hidden" 
@@ -11,12 +19,14 @@
             value="{{ method }}"
         >
     {% endif %}
-    <input 
-        type="hidden" 
-        name="_csrf_token" 
-        value="{{ csrf }}"
-    >
-    <div class="space-y-2">
+    {% if is_csrf_protected %}
+        <input 
+          type="hidden" 
+          name="_csrf_token" 
+          value="{{ csrf_token }}"
+        >
+    {% endif %}
+    <div class="flex flex-col justify-center items-center space-y-2">
         {{ block("form_content") }}
     </div>
 </form>
