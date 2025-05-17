@@ -39,4 +39,9 @@ class InputBag
     {
         return $this->current[$field] ?? $default;
     }
+
+    public function has(string $field): bool 
+    {
+        return isset($this->current[$field]);
+    }
 }
