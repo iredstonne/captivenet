@@ -64,11 +64,11 @@ class WebController extends AbstractWebController
             return $this->back($request, $response);
         }
         if($coupon->isDeviceTimeExceeded($device)) {
-            $this->errors->push("coupon_code", "Le temps accordé par ce code à votre appareil a écoulé.");
+            $this->errors->push("coupon_code", "Le temps accordé à votre appareil par ce code d'accès a expiré.");
             return $this->back($request, $response);
         }
         if($coupon->hasReachedDeviceLimit($device)) {
-            $this->errors->push("coupon_code", "Trop d'appareils pour ce code sont connectés.");
+            $this->errors->push("coupon_code", "Trop d'appareils sont connectés à ce code.");
             return $this->back($request, $response);
         }
         if(!SessionService::connect($device, $coupon)) {
@@ -83,7 +83,7 @@ class WebController extends AbstractWebController
     {
         $device = $request->getAttribute("device");
         if(!($session = SessionModel::findActiveByDevice($device))) {
-            throw new HttpUnauthorizedException($request, "Votre appareil n'a pas aucune session ouverte.");
+            throw new HttpUnauthorizedException($request, "Votre appareil n'a aucune session ouverte.");
         }
         if (!($coupon = CouponModel::findById($session->couponId))) {
             throw new HttpUnauthorizedException($request, "Le coupon utilisé est invalide.");
