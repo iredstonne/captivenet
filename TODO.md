@@ -1,3 +1,4 @@
-- Fix PHP session accumulation that slow down nginx and FPM and make app fail (critical, must fix)
-- Organize the project
-- Fix small bugs and inconsistencies in portal
+- Fix small bugs and inconsistencies in portal app
+- Fix CPD redirection issue (blank page or DNS not resolved)
+- Fix CSRF form validation feature failure
+- Fix auto logout feature
