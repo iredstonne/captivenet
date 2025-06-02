@@ -228,9 +228,10 @@ sudo apt install --no-upgrade -y \
     nginx \
     dnsmasq \
     iptables \
+    ipset \
+    ipset-persistent \
     cron \
     conntrack \
-    ipset \
     nodejs
 
 # Networking
@@ -319,14 +320,16 @@ ip link show wlan0
 ip addr show wlan0
 printf "${FG_PURPLE}Configuring DHCP and DNS...${RESET}\n"
 HOST_SUBNET="${HOST_ADDRESS%.*}"
-DHCP_RANGE_START_OCTET=10
-DHCP_RANGE_USABLE_HOSTS=$((USABLE_HOSTS - (DHCP_RANGE_START_OCTET - 1)))
-DHCP_RANGE_END_OCTET=$((DHCP_RANGE_START_OCTET + MAX_HOSTS - 1))
-if (( DHCP_RANGE_START_OCTET < 0 || DHCP_RANGE_END_OCTET > 255 )); then
+DHCP_START_HOST=10
+DHCP_END_HOST=$((DHCP_START_HOST + MAX_HOSTS - 1))
+echo $MAX_HOSTS
+echo $USABLE_HOSTS
+echo $DHCP_END_HOST
+if (( DHCP_END_HOST > 254 )); then
     printf "${FG_RED}${BOLD}Invalid DHCP range for $HOST_SUBNET.0. Aborting...${RESET}\n"
     exit 1
 fi
-DHCP_RANGE_LINE="dhcp-range=${HOST_SUBNET}.${DHCP_RANGE_START_OCTET},${HOST_SUBNET}.${DHCP_RANGE_END_OCTET},24h"
+DHCP_RANGE_LINE="dhcp-range=${HOST_SUBNET}.${DHCP_START_HOST},${HOST_SUBNET}.${DHCP_END_HOST},24h"
 sed -i 's/^dhcp-range=.*/'"$DHCP_RANGE_LINE"'/' "$BASE_PATH/config/network/dnsmasq.conf"
 sudo ln -sf "$BASE_PATH/config/network/dnsmasq.conf" "/etc/dnsmasq.d/dnsmasq-overrides.conf"
 printf "${FG_PURPLE}Scheduling a wlan0 iface state change dispatcher script...${RESET}\n"
@@ -337,30 +340,25 @@ STATE="\$2"
 if [ "\$IFACE" = "wlan0" ] && [ "\$STATE" = "up" ]; then
     logger -t "dispatcher" "wlan0 is up"
     DAEMON_PROCESS_NAME="dnsmasq"
-    logger -t "dispatcher" "Restarting \$DAEMON_PROCESS_NAME"
-    sudo systemctl restart \$DAEMON_PROCESS_NAME
-    for _ in {1..10}; do
-        if systemctl is-active --quiet \$DAEMON_PROCESS_NAME; then
-            logger -t "dispatcher" "\$DAEMON_PROCESS_NAME is active"
-            break
-        fi
-        logger -t "dispatcher" "Waiting for \$DAEMON_PROCESS_NAME..."
+    logger -t "dispatcher" "Restarting dnsmasq"
+    sudo systemctl restart dnsmasq
+    until systemctl is-active --quiet dnsmasq; do
+        logger -t "dispatcher" "Waiting for dnsmasq to wake up..."
         sleep 1
     done
-    if ! systemctl is-active --quiet \$DAEMON_PROCESS_NAME; then
-        logger -t "dispatcher" "\$DAEMON_PROCESS_NAME failed to activate. Aborting..."
+    if ! systemctl is-active --quiet dnsmasq; then
+        logger -t "dispatcher" "dnsmasq failed to activate. Aborting..."
         exit 1
     fi
-    logger -t "dispatcher" "Applying iptables rules..."
-    sudo chmod +x "$BASE_PATH/config/network/firewall.sh"
-    sudo bash "$BASE_PATH/config/network/firewall.sh"
+    logger -t "dispatcher" "Restoring iptables rules from saved state..."
+    iptables-restore < /etc/iptables/rules.v4
+    logger -t "dispatcher" "Restoring ipset sets from saved state..."
+    ipset restore < /etc/iptables/ipsets
 fi
 EOF
 sudo chmod +x /etc/NetworkManager/dispatcher.d/99-wlan0-up-dispatch
-printf "${FG_PURPLE}Running a wlan0 iface state change dispatcher script (init round)...${RESET}\n"
-SCRIPT_START=$(date +"%Y-%m-%d %H:%M:%S")
-sudo bash /etc/NetworkManager/dispatcher.d/99-wlan0-up-dispatch wlan0 up
-journalctl -t dispatcher --since "$SCRIPT_START" --no-pager
+sudo chmod +x "$BASE_PATH/config/network/firewall.sh"
+sudo bash "$BASE_PATH/config/network/firewall.sh"
 iptables -L -n -v
 
 # MariaDB
@@ -431,12 +429,12 @@ echo_frame \
 
 # Nginx
 echo_frame "${FG_CYAN}${UNDERLINE}Nginx - Web Server${RESET}"
-printf "${FG_PURPLE}Generating self-signed SSL certificate...${RESET}\n"
-openssl req -x509 -nodes -days 365 \
-    -newkey rsa:2048 \
-    -keyout /etc/ssl/private/captivenet.key \
-    -out /etc/ssl/certs/captivenet.crt \
-    -subj "/CN=captivenet.local"
+# printf "${FG_PURPLE}Generating self-signed SSL certificate...${RESET}\n"
+# openssl req -x509 -nodes -days 365 \
+#     -newkey rsa:2048 \
+#     -keyout /etc/ssl/private/captivenet.key \
+#     -out /etc/ssl/certs/captivenet.crt \
+#     -subj "/CN=captivenet.local"
 printf "${FG_PURPLE}Configuring Nginx...${RESET}\n"
 SITE_AVAILABLE_DIR_PATH="/etc/nginx/sites-available"
 SITE_ENABLED_DIR_PATH="/etc/nginx/sites-enabled"
@@ -471,10 +469,12 @@ sudo ln -sf "$BASE_PATH/config/php/fpm/php.ini" "/etc/php/8.4/fpm/php.ini"
 sudo ln -sf "$BASE_PATH/config/php/cli/php.ini" "/etc/php/8.4/cli/conf.d/php.ini"
 sudo ln -sf "$BASE_PATH/config/php/fpm/www.conf" "/etc/php/8.4/fpm/pool.d/www.conf"
 printf "${FG_PURPLE}Refining PHP 8.4 permissions...${RESET}\n"
+rm -rf "/etc/sudoers.d/www-data"
 touch "/etc/sudoers.d/www-data"
 chmod 0440 "/etc/sudoers.d/www-data"
-echo "www-data ALL=(ALL) NOPASSWD: /sbin/iw" | sudo tee -a /etc/sudoers.d/www-data
-echo "www-data ALL=(ALL) NOPASSWD: /sbin/ipset" | sudo tee -a /etc/sudoers.d/www-data 
+echo "www-data ALL=(ALL) NOPASSWD: /usr/sbin/iw" | sudo tee -a /etc/sudoers.d/www-data >/dev/null
+echo "www-data ALL=(ALL) NOPASSWD: /usr/sbin/ipset" | sudo tee -a /etc/sudoers.d/www-data >/dev/null
+echo "www-data ALL=(ALL) NOPASSWD: /usr/bin/tee /etc/iptables/ipsets" | sudo tee -a /etc/sudoers.d/www-data >/dev/null
 printf "${FG_PURPLE}Clearing PHP 8.4 session cache...${RESET}\n"
 sudo rm -rf /var/lib/php/sessions/*
 sudo mkdir -p /var/lib/php/sessions
@@ -504,7 +504,7 @@ add_cron_job "* * * * * /usr/bin/php $SITE_WWW_DIR_PATH/app/bin/scheduler.php"
 echo_frame "${FG_CYAN}${UNDERLINE}NodeJS${RESET}"
 cd "$BASE_PATH/app"
 printf "${FG_PURPLE}Installing NodeJS app dependencies...${RESET}\n"
-npm install -g npm@latest >/dev/null
+sudo npm install -g npm@10.8.2 >/dev/null
 sudo npm install >/dev/null
 printf "${FG_GREEN}NodeJS app dependencies installed${RESET}\n" 
 printf "${FG_PURPLE}Building Vite dependencies assets...${RESET}\n"
