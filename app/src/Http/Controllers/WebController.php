@@ -83,7 +83,7 @@ class WebController extends AbstractWebController
     {
         $device = $request->getAttribute("device");
         if(!($session = SessionModel::findActiveByDevice($device))) {
-            throw new HttpUnauthorizedException($request, "Votre appareil n'a aucune session ouverte.");
+            throw new HttpUnauthorizedException($request, "Votre appareil n'a initié aucune session.");
         }
         if (!($coupon = CouponModel::findById($session->couponId))) {
             throw new HttpUnauthorizedException($request, "Le coupon utilisé est invalide.");
@@ -103,7 +103,8 @@ class WebController extends AbstractWebController
             "device_mac_address" => $device->macAddress,
             "allowed_time" => Time::formatRemaining($coupon->allowedTime),
             "allowed_devices" => $coupon->allowedDevices,
-            "remaining_device_time" => Time::formatRemaining($remainingDeviceTime),
+            "remaining_device_time" => $remainingDeviceTime,
+            "remaining_device_time_formatted" => Time::formatRemaining($remainingDeviceTime),
             "remaining_devices" => $remainingDevices,
             "connected_devices" => $connectedDevices,
             "connected_devices_count" => count($connectedDevices)
@@ -114,13 +115,15 @@ class WebController extends AbstractWebController
     {
         $device = $request->getAttribute("device");
         if (!($session = SessionModel::findActiveByDevice($device))) {
-            throw new HttpUnauthorizedException($request, "Aucune session liée à cet appareil n'est active.");
+            throw new HttpUnauthorizedException($request, "Votre appareil n'a initié aucune session.");
         }
         if (!($coupon = CouponModel::findById($session->couponId))) {
             throw new HttpUnauthorizedException($request, "Le coupon utilisé est invalide ou a expiré.");
         }
-        SessionService::disconnect($device, $session);
-        $this->flashes->push("success", "Déconnecté du code d'accès {$coupon->code}.");
+        if(!(SessionService::disconnect($device, $session))) {
+            throw new HttpException($request, "La déconnexion a échoué: Le pare-feu n'est pas parvenu a déauthentifié l'appareil.", 503);
+        }
+        $this->flashes->push("message", "Déconnecté du code d'accès {$coupon->code}.");
         return $this->redirect($response, "/");
     }
 }
