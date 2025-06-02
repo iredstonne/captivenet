@@ -1,5 +1,10 @@
 {% extends "layouts/page.html.twig" %}
 
+
+{% block scripts %}
+<script type="module" src="{{ vite_asset('resources/scripts/session.ts') }}"></script>
+{% endblock scripts %}
+
 {% block content %}
     <div class="flex flex-col w-full items-center space-y-4">
         {% include "components/flash.html.twig" %}
@@ -11,15 +16,15 @@
                     <span class="text-gray-900 font-mono my-1 block">{{ coupon_code }}</span>
                 </div>
                 <div>
-                    <span class="block font-medium text-gray-500">Temps par appareil</span>
+                    <span class="block font-medium text-gray-500">Votre temps accordé</span>
                     <span class="text-xs text-gray-500 my-1 block">{{ allowed_time|default("∞") }}</span>
                 </div>
                 <div>
-                    <span class="block font-medium text-gray-500">Temps restants pour cet appareil</span>
-                    <span class="text-xs text-gray-500 my-1 block">{{ remaining_device_time|default("?") }}</span>
+                    <span class="block font-medium text-gray-500">Votre temps restants</span>
+                    <span class="text-xs text-gray-500 my-1 block" id="remaining_device_time" data-value="{{ remaining_device_time|default(0) }}">{{ remaining_device_time_formatted|default("?") }}</span>
                 </div>
                 <div>
-                    <span class="block font-medium text-gray-500">Appareils</span>
+                    <span class="block font-medium text-gray-500">Appareils restants</span>
                     <span class="text-xs text-gray-500 my-1 block">{{ remaining_devices|default("?") }} / {{ allowed_devices|default("∞") }}</span>
                 </div>
             </div>

@@ -7,7 +7,8 @@ export default defineConfig({
         tailwindcss(),
         compile([
             "resources/styles/index.css",
-            "resources/scripts/index.ts"
+            "resources/scripts/index.ts",
+            "resources/scripts/session.ts",
         ])
     ]
 })
