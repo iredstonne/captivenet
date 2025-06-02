@@ -11,7 +11,6 @@ use Slim\Views\Twig;
 use Slim\Exception\HttpException;
 use Symfony\Component\ErrorHandler\Debug;
 
-// TODO: Improve error detection (add json output)
 class ErrorHandlerMiddleware implements MiddlewareInterface 
 {
     private ContainerInterface $container;
@@ -31,7 +30,7 @@ class ErrorHandlerMiddleware implements MiddlewareInterface
             if(!(error_reporting() && $severity)) {
                 return;
             }
-            throw new \ErrorException($message, 0, $severity, $filename, $line);
+            throw new \ErrorException($message, 500, $severity, $filename, $line);
         });
     }
 
