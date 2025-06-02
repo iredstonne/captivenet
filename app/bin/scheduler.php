@@ -15,7 +15,7 @@ foreach (SessionModel::findAllActive() as $session) {
     $device = DeviceModel::findById($session->deviceId);
     $coupon = CouponModel::findById($session->couponId);
 
-    syslog(LOG_INFO, "Checking session with coupon  {$coupon->code} of device {$device->macAddress} - {$device->ipAddress}...");
+    syslog(LOG_INFO, "Checking session with coupon {$coupon->code} of device {$device->macAddress} - {$device->ipAddress}...");
     syslog(LOG_INFO, "Is device connected to network ? " . (Network::isDeviceConnectedToNetwork($device) ? "Yes" : "No"));
     syslog(LOG_INFO, "Is device authenticated to firewall ? " . (Firewall::isAuthenticated($device) ? "Yes" : "No"));
     syslog(LOG_INFO, "Ran out of device time for this coupon ? " . ($coupon->isDeviceTimeExceeded($device) ? "Yes" : "No"));
