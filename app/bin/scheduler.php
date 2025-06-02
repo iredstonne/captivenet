@@ -9,19 +9,26 @@ use App\Database\Models\SessionModel;
 use App\Services\SessionService;
 
 openlog("scheduler", LOG_PID | LOG_PERROR, LOG_CRON);
-syslog(LOG_INFO, "Running scheduler...");
+syslog(LOG_INFO, "Checking for active sessions...");
+
 foreach (SessionModel::findAllActive() as $session) {
     $device = DeviceModel::findById($session->deviceId);
     $coupon = CouponModel::findById($session->couponId);
 
-    syslog(LOG_INFO, "Checking device {$device->ipAddress}...");
-    if ($coupon->isTimeExceededForDevice($device)) {
-        SessionService::disconnect($device);
+    syslog(LOG_INFO, "Checking session with coupon  {$coupon->code} of device {$device->macAddress} - {$device->ipAddress}...");
+    syslog(LOG_INFO, "Is device connected to network ? " . (Network::isDeviceConnectedToNetwork($device) ? "Yes" : "No"));
+    syslog(LOG_INFO, "Is device authenticated to firewall ? " . (Firewall::isAuthenticated($device) ? "Yes" : "No"));
+    syslog(LOG_INFO, "Ran out of device time for this coupon ? " . ($coupon->isDeviceTimeExceeded($device) ? "Yes" : "No"));
+
+    if($coupon->isDeviceTimeExceeded($device)) {
         syslog(LOG_INFO, "Disconnecting device {$device->ipAddress} (time exceeded)");
-    } else if(!Network::isDeviceConnectedToNetwork($device)) {
         SessionService::disconnect($device);
+    }
+
+    if(!Network::isDeviceConnectedToNetwork($device)) {
         syslog(LOG_INFO, "Disconnecting device {$device->ipAddress} (not connected to network)");
+        SessionService::disconnect($device);
     }
 }
+
 closelog();
-// to inspect syslog use journalctl -t scheduler
