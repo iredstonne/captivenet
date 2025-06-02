@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     {% block head %}{% endblock %}
     <link rel="stylesheet" href="{{ vite_asset('resources/styles/index.css') }}">
-    <script src="{{ vite_asset('resources/scripts/index.ts') }}"></script>
+    <script type="module" src="{{ vite_asset('resources/scripts/index.ts') }}"></script>
 </head>
 <body>
     {% block body %}{% endblock %}
