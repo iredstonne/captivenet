@@ -43,10 +43,6 @@ iptables -A INPUT -i wlan0 -p tcp --dport 80 -j ACCEPT
 iptables -A INPUT -i wlan0 -p tcp -m mark ! --mark $AUTHENTICATED_MARK --dport 443 -j REJECT --reject-with tcp-reset
 iptables -A INPUT -i wlan0 -p tcp --dport 443 -j ACCEPT
 
-# Block VPN traffic
-iptables -A INPUT -i wlan0 -p udp --dport 1194 -j DROP # OpenVPN
-iptables -A INPUT -i wlan0 -p udp --dport 51820 -j DROP # WireGuard
-
 # DNS traffic redirection
 iptables -t nat -A PREROUTING -i wlan0 -p udp --dport 53 -j DNAT --to-destination $HOST_ADDRESS:53
 iptables -t nat -A PREROUTING -i wlan0 -p tcp --dport 53 -j DNAT --to-destination $HOST_ADDRESS:53
