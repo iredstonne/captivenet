@@ -37,8 +37,8 @@ class Network
 
     public static function isDeviceConnectedToNetwork(DeviceModel $device): bool 
     {
-        $deviceMacAddress = strtolower($device->macAddress);
-        exec("sudo /sbin/iw dev wlan0 station dump | awk '/Station/ {print $2}' | grep -i -q ^$deviceMacAddress\$", $_, $exitCode); // 0 = Passed, 1 = Failed, 2 = Error
+        $escapedDeviceMacAddress = escapeshellarg($device->macAddress);
+        exec("sudo /usr/sbin/iw dev wlan0 station dump | awk '/Station/ {print $2}' | grep -iq $escapedDeviceMacAddress", $output, $exitCode); // 0 = Passed, 1 = Failed, 2 = Error
         return $exitCode === 0;
     }
 }
