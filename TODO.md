@@ -1,4 +1,2 @@
-- Fix small bugs and inconsistencies in portal app
-- Fix CPD redirection issue (blank page or DNS not resolved)
-- Fix CSRF form validation feature failure
-- Fix auto logout feature
+- Fix auto logout when device is disconnected for too long or time run out
+- Add client management trough CLI (optional)
