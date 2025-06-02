@@ -1,0 +1,10 @@
+connectivitycheck.gstatic.com
+connectivitycheck.android.com
+clients3.google.com
+android.clients.google.com
+captive.apple.com
+gsp1.apple.com
+www.apple.com
+edge-http.microsoft.com
+www.msftconnecttest.com
+www.msftncsi.com
