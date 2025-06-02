@@ -28,26 +28,19 @@ class CsrfGuardMiddleware implements MiddlewareInterface
     public function getCsrfToken()
     {
         $token = $this->storage[$this->storageKey] ?? null;
-        if(!isset($token) || is_string($token)) {
-            return $this->generateCsrfToken();
+        if (!isset($token) || !is_string($token)) {
+            $token = bin2hex(random_bytes(32));
+            $this->storage[$this->storageKey] = $token;
         }
         return htmlspecialchars($token);
-    }
-
-    private function generateCsrfToken() 
-    {
-        $token = bin2hex(random_bytes(32));
-        $this->storage[$this->storageKey] = $token;
-        return $token;
     }
 
     public function process(Request $request, Handler $handler): Response
     {
         if(strtoupper($request->getMethod()) === "POST") {
-            $sessionCrsfToken = $this->storage[$this->storageKey] ?? null;
-            $currentCsrfToken = $request->getParsedBody()[$this->storageKey] ?? null;
-            unset($this->storage[$this->storageKey]);
-            if(!$sessionCrsfToken || !$currentCsrfToken || !hash_equals($sessionCrsfToken, $currentCsrfToken)) {
+            $storedCrsfToken = htmlspecialchars($this->storage[$this->storageKey] ?? null);
+            $submittedCsrfToken = htmlspecialchars($request->getParsedBody()[$this->storageKey] ?? null);
+            if(!isset($storedCrsfToken) || !isset($submittedCsrfToken) || !is_string($storedCrsfToken) || !is_string($submittedCsrfToken) || !hash_equals($storedCrsfToken, $submittedCsrfToken)) {
                 throw new HttpBadRequestException($request, "Echec de l'envoi du formulaire");
             }
         }
