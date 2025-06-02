@@ -101,10 +101,10 @@ class WebController extends AbstractWebController
             "coupon_code" => $coupon->code,
             "device_ip_address" => $device->ipAddress,
             "device_mac_address" => $device->macAddress,
-            "allowed_time" => Time::formatRemaining($coupon->allowedTime),
+            "allowed_time_formatted" => Time::formatHuman($coupon->allowedTime),
             "allowed_devices" => $coupon->allowedDevices,
             "remaining_device_time" => $remainingDeviceTime,
-            "remaining_device_time_formatted" => Time::formatRemaining($remainingDeviceTime),
+            "remaining_device_time_formatted" => Time::formatHuman($remainingDeviceTime),
             "remaining_devices" => $remainingDevices,
             "connected_devices" => $connectedDevices,
             "connected_devices_count" => count($connectedDevices)

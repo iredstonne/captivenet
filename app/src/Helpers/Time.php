@@ -3,7 +3,7 @@ namespace App\Helpers;
 
 class Time 
 {
-    public static function formatRemaining(int $seconds): string
+    public static function formatHuman(int $seconds): string
     {
         $seconds = max(0, $seconds);
         $hours = floor($seconds / 3600);
