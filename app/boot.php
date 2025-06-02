@@ -8,6 +8,7 @@ $dotenv->safeLoad();
 
 define("HTTP", isset($_SERVER["REQUEST_METHOD"]));
 define("PRODUCTION", $_ENV["APP_ENV"] === "production");
+define("DATABASE_SOCKET", $_ENV["DATABASE_SOCKET"] ?? null);
 define("DATABASE_HOST", $_ENV["DATABASE_HOST"] ?? "localhost");
 define("DATABASE_PORT", $_ENV["DATABASE_PORT"] ?? 3306);
 define("DATABASE_NAME", $_ENV["DATABASE_NAME"] ?? null);
