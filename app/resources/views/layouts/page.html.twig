@@ -6,8 +6,8 @@
 {% endblock %}
 
 {% block body %}
-    <div class="fixed inset-0 z-50 flex items-center justify-center bg-sky-200">
-        <div class="flex flex-col w-full max-w-sm mx-4 p-8 items-center bg-white rounded-2xl shadow-lg overflow-hidden">
+    <div class="min-h-screen w-full flex items-center justify-center bg-sky-200 py-10 overflow-y-auto">
+        <div class="flex flex-col w-full max-w-sm mx-4 p-8 items-center bg-white rounded-2xl shadow-lg overflow-auto">
             {% block content %}{% endblock %}
         </div>
     </div>
