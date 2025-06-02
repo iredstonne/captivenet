@@ -8,21 +8,23 @@ class Firewall
     public static function isAuthenticated(DeviceModel $device): bool 
     {
         $escapedDeviceIpAddress = escapeshellarg($device->ipAddress);
-        exec("sudo /sbin/ipset test authenticated $escapedDeviceIpAddress", $_, $exitCode);
+        exec("sudo /usr/sbin/ipset test authenticated $escapedDeviceIpAddress", $_, $exitCode);
         return $exitCode === 0;
     }
 
     public static function authenticate(DeviceModel $device): bool
     {
         $escapedDeviceIpAddress = escapeshellarg($device->ipAddress);
-        exec("sudo /sbin/ipset add authenticated $escapedDeviceIpAddress -exist", $_, $exitCode);
-        return $exitCode === 0;
+        exec("sudo /usr/sbin/ipset add authenticated $escapedDeviceIpAddress -exist", $_, $exitCodeA);
+        exec("sudo /usr/sbin/ipset save | sudo tee /etc/iptables/ipsets", $_, $exitCodeB);
+        return $exitCodeA === 0 && $exitCodeB === 0;
     }
 
     public static function deauthenticate(DeviceModel $device): bool
     {
         $escapedDeviceIpAddress = escapeshellarg($device->ipAddress);
-        exec("sudo /sbin/ipset del authenticated $escapedDeviceIpAddress -exist", $_, $exitCode);
-        return $exitCode === 0;
+        exec("sudo /usr/sbin/ipset del authenticated $escapedDeviceIpAddress -exist", $_, $exitCodeA);
+        exec("sudo /usr/sbin/ipset save | sudo tee /etc/iptables/ipsets", $_, $exitCodeB);
+        return $exitCodeA === 0 && $exitCodeB === 0;
     }
 }
