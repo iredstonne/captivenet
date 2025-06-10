@@ -3,7 +3,7 @@ namespace App\Database\Models;
 
 use App\Database\Connection;
 
-class CouponModel 
+class CouponModel
 {
     public int $id;
     public string $code;
@@ -52,17 +52,17 @@ class CouponModel
         return $total;
     }
 
-    public function isDeviceTimeExceeded(DeviceModel $device): bool 
+    public function isDeviceTimeExceeded(DeviceModel $device): bool
     {
         return $this->isTimeLimited() && $this->countUsedDeviceTime($device) >= $this->allowedTime;
     }
 
-    public function isTimeLimited() 
+    public function isTimeLimited()
     {
         return $this->allowedTime > 0;
     }
 
-    public function countUsedDevices() 
+    public function countUsedDevices()
     {
         return count(SessionModel::findAllActiveByCoupon($this));
     }
@@ -73,12 +73,12 @@ class CouponModel
         return array_map(fn($session) => DeviceModel::findById($session->deviceId), $sessions);
     }
 
-    public function hasReachedDeviceLimit(): bool 
+    public function hasReachedDeviceLimit(): bool
     {
         return $this->isDeviceLimited() && $this->countUsedDevices() >= $this->allowedDevices;
     }
-    
-    public function isDeviceLimited() 
+
+    public function isDeviceLimited()
     {
         return $this->allowedDevices > 0;
     }

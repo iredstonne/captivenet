@@ -3,7 +3,7 @@ namespace App\Database\Models;
 
 use App\Database\Connection;
 
-class SessionModel 
+class SessionModel
 {
     public int $id;
     public int $deviceId;
@@ -96,7 +96,7 @@ class SessionModel
         $snapshots = $stmt->fetchAll(\PDO::FETCH_OBJ);
         return array_map(fn($snapshot) => new self($snapshot), $snapshots);
     }
-    
+
     public static function findByCoupon(CouponModel $coupon): ?self
     {
         $pdo = Connection::getPDO();

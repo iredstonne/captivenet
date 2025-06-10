@@ -13,16 +13,16 @@ class DeviceModel
     public string $kind;
     public string $discoveredAt;
 
-    private function __construct(object $snapshot) 
+    private function __construct(object $snapshot)
     {
         $this->id = $snapshot->id;
         $this->ipAddress = $snapshot->ip_address;
         $this->macAddress = $snapshot->mac_address;
         $this->kind = $snapshot->kind;
-        $this->discoveredAt = $snapshot->discovered_at; 
+        $this->discoveredAt = $snapshot->discovered_at;
     }
 
-    public static function discover(string $ipAddress, string $macAddress, DeviceKind $kind): DeviceModel 
+    public static function discover(string $ipAddress, string $macAddress, DeviceKind $kind): DeviceModel
     {
         $pdo = Connection::getPDO();
         $stmt = $pdo->prepare("SELECT * FROM devices WHERE mac_address = ? LIMIT 1");
@@ -34,7 +34,7 @@ class DeviceModel
                 $stmt->execute([$ipAddress, $snapshot->id]);
                 $snapshot->ip_address = $ipAddress;
             }
-            return new self($snapshot); 
+            return new self($snapshot);
         }
         $stmt = $pdo->prepare("INSERT INTO devices (ip_address, mac_address, kind) VALUES (?, ?, ?)");
         $stmt->execute([$ipAddress, $macAddress, $kind->value]);
