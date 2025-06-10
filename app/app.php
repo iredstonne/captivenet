@@ -24,7 +24,7 @@ use Slim\Middleware\BodyParsingMiddleware;
 use Slim\Exception\HttpInternalServerError;
 use Symfony\Component\ErrorHandler\Debug;
 
-if(session_status() == PHP_SESSION_NONE) {
+if(session_status() != PHP_SESSION_ACTIVE) {
     session_start();
 }
 
