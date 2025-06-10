@@ -22,12 +22,12 @@ foreach (SessionModel::findAllActive() as $session) {
 
     if($coupon->isDeviceTimeExceeded($device)) {
         syslog(LOG_INFO, "Disconnecting device {$device->ipAddress} (time exceeded)");
-        SessionService::disconnect($device);
+        SessionService::disconnect($device, $session);
     }
 
     if(!Network::isDeviceConnectedToNetwork($device)) {
         syslog(LOG_INFO, "Disconnecting device {$device->ipAddress} (not connected to network)");
-        SessionService::disconnect($device);
+        SessionService::disconnect($device, $session);
     }
 }
 
