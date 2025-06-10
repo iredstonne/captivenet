@@ -3,12 +3,12 @@ namespace App\Helpers;
 
 use App\Database\Models\DeviceModel;
 
-class Firewall 
+class Firewall
 {
-    public static function isAuthenticated(DeviceModel $device): bool 
+    public static function isAuthenticated(DeviceModel $device): bool
     {
         $escapedDeviceIpAddress = escapeshellarg($device->ipAddress);
-        exec("sudo /usr/sbin/ipset test authenticated $escapedDeviceIpAddress", $_, $exitCode);
+        exec("sudo /usr/sbin/ipset test authenticated $escapedDeviceIpAddress -exist", $_, $exitCode);
         return $exitCode === 0;
     }
 
