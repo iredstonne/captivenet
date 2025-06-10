@@ -40,7 +40,7 @@ class WebController extends AbstractWebController
                 ],
                 "pattern" => [
                     "match" => "/^[0-9]+$/i",
-                    "message" => "Ce code d'accès ne peut contenir que des chiffres."
+                    "message" => "Un code d'accès ne peut contenir que des chiffres."
                 ],
                 "maxLength" => [
                     "value" => 20,
