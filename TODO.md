@@ -1,2 +1,1 @@
 - Fix auto logout when device is disconnected for too long or time run out
-- Add client management trough CLI (optional)
