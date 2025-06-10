@@ -12,16 +12,15 @@ class ErrorBag
     public function __construct() 
     {
         if(session_status() != PHP_SESSION_ACTIVE) {
-            if(!session_start()) {
-                throw new \RuntimeException("Failed to start session.");
-            }
+            throw new \RuntimeException("Session must be started before using ErrorBag.");
+            exit;
         }
         $this->storage = &$_SESSION;
         if(!isset($this->storage[$this->storageKey])) {
             $this->storage[$this->storageKey] = [];
         }
         $this->current = $this->storage[$this->storageKey] ?? [];
-        $this->storage[$this->storageKey] = [];
+        unset($this->storage[$this->storageKey]);
     }
 
     public function push(string $field, string $message)
