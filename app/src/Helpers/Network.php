@@ -39,6 +39,7 @@ class Network
     {
         $escapedDeviceMacAddress = escapeshellarg($device->macAddress);
         exec("sudo /usr/sbin/iw dev wlan0 station dump | awk '/Station/ {print $2}' | grep -iq $escapedDeviceMacAddress", $output, $exitCode); // 0 = Passed, 1 = Failed, 2 = Error
+        syslog(LOG_INFO, "- Exit code: " . $exitCode . " - Test: " . ($exitCode === 0 ? "Passed" : "Failed"));
         return $exitCode === 0;
     }
 }
