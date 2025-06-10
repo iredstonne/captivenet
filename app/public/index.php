@@ -19,3 +19,7 @@ $app->any("/{routes:.+}", function (Request $request, Response $response) {
         ->withHeader("Location", "http://captivenet.local");
 });
 $app->run();
+
+if(session_status() === PHP_SESSION_ACTIVE) {
+    session_write_close();
+}

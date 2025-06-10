@@ -24,6 +24,10 @@ use Slim\Middleware\BodyParsingMiddleware;
 use Slim\Exception\HttpInternalServerError;
 use Symfony\Component\ErrorHandler\Debug;
 
+if(session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
+
 $builder = new ContainerBuilder();
 $builder->useAutowiring(true);
 $container = $builder->build();
@@ -65,9 +69,9 @@ $twig->getEnvironment()->addFunction(new \Twig\TwigFunction("csrf_token", functi
 
 $container->set(App::class, $app);
 $container->set(Twig::class, $twig);
-$container->set(Inputs::class, $inputs);
-$container->set(Errors::class, $errors);
-$container->set(Flashes::class, $flashes);
+$container->set(InputBag::class, $inputs);
+$container->set(ErrorBag::class, $errors);
+$container->set(FlashBag::class, $flashes);
 
 $app->add(BodyParsingMiddleware::class);
 $app->add(MethodOverrideMiddleware::class);
@@ -80,4 +84,5 @@ if(PRODUCTION) {
 } else {
     Debug::enable();
 }
+
 return $app;
