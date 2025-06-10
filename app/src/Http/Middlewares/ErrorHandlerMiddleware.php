@@ -22,6 +22,7 @@ class ErrorHandlerMiddleware implements MiddlewareInterface
         $this->container = $container;
         $this->app = $this->container->get(App::class);
         $this->twig = $this->container->get(Twig::class);
+        $this->registerGlobalHandlers();
     }
 
     private function registerGlobalHandlers()
@@ -37,7 +38,7 @@ class ErrorHandlerMiddleware implements MiddlewareInterface
     private function handleException(Request $request, \Throwable $throwable): Response
     {
         $response = $this->app->getResponseFactory()->createResponse();
-        $isHttp = $throwable instanceof HTTPException;
+        $isHttp = $throwable instanceof HttpException;
         $code =  $throwable->getCode() ?? 500;
         $message = $throwable->getMessage();
 
