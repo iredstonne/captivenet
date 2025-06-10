@@ -47,6 +47,9 @@ iptables -A INPUT -i wlan0 -p tcp --dport 443 -j ACCEPT
 iptables -t nat -A PREROUTING -i wlan0 -p udp --dport 53 -j DNAT --to-destination $HOST_ADDRESS:53
 iptables -t nat -A PREROUTING -i wlan0 -p tcp --dport 53 -j DNAT --to-destination $HOST_ADDRESS:53
 
+# ICMP traffic redirection
+iptables -t nat -A PREROUTING -i wlan0 -p icmp --icmp-type echo-request -m mark ! --mark $AUTHENTICATED_MARK -j DNAT --to-destination $HOST_ADDRESS
+
 # HTTP traffic redirection
 iptables -t nat -A PREROUTING -i wlan0 -p tcp -m mark ! --mark $AUTHENTICATED_MARK --dport 80 -j DNAT --to-destination $HOST_ADDRESS:80
 
