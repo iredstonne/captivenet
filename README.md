@@ -1,5 +1,5 @@
 # CaptiveNet
-## Last push: 02/06/25
+## Last push: 10/06/25
 ![Project Status](https://img.shields.io/badge/status-in--development-orange)
 
 # Requirements
